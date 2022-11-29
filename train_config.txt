@@ -1,0 +1,6 @@
+D:\CS640-Project-TransUnet\TransUnet\dataset\build
+None
+4
+0.001
+20
+trans_build
