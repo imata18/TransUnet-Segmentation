@@ -1,0 +1,17 @@
+TransUnet:
+|--checkpoint  # for trained model
+|--dataset
+	|--build
+		|--test
+		|--train
+		|--val
+|--loss  # for dice loss
+|--model
+	|--netowrks
+	|--vit_checkpoint
+		|--imagenet21k  # pre-trained model
+|-- data.py
+|--predict.py
+|--validate.py
+|--train.py
+|--trainconfig.txt
