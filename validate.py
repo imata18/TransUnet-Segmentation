@@ -33,11 +33,11 @@ def auto_val(model):
     imgs = []
     preds = []
     gts = []
-    dices = 0
-    dice_Esophagus = 0
-    dice_Heart = 0
-    dice_Trachea = 0
-    dice_Aorta = 0
+    dices_mean_total = 0
+    dice_Esophagus_total = 0
+    dice_Heart_total = 0
+    dice_Trachea_total = 0
+    dice_Aorta_total = 0
     for i, (img, mask) in enumerate(val_loader):
         im = img
         img = img.cuda()
@@ -47,11 +47,23 @@ def auto_val(model):
         iters += batch_size
         pred[pred < 0.5] = 0
         pred[pred > 0.5] = 1
-        # dice_Esophagus = diceCoeffv2(pred[:, 0:1, :], mask[:, 0:1, :], activation=None)
-        # dice_Heart = diceCoeffv2(pred[:, 1:2, :], mask[:, 1:2, :], activation=None)
-        # dice_Trachea = diceCoeffv2(pred[:, 2:3, :], mask[:, 2:3, :], activation=None)
-        # dice_Aorta = diceCoeffv2(pred[:, 3:4, :], mask[:, 3:4, :], activation=None)
+
+        dice_Esophagus = diceCoeffv2(pred[:, 0:1, :], mask.cuda()[:, 0:1, :], activation=None)
+        dice_Heart = diceCoeffv2(pred[:, 1:2, :], mask.cuda()[:, 1:2, :], activation=None)
+        dice_Trachea = diceCoeffv2(pred[:, 2:3, :], mask.cuda()[:, 2:3, :], activation=None)
+        dice_Aorta = diceCoeffv2(pred[:, 3:4, :], mask.cuda()[:, 3:4, :], activation=None)
         mean_dice = (dice_Aorta+dice_Trachea+dice_Esophagus+dice_Heart)/4
+
+        print('mean_dice={:.4}, Esophagus_dice={:.4}, Heart_dice={:.4}, Trachea_dice={:.4}, Aorta_dice={:.4}'
+              .format(mean_dice.item(), dice_Esophagus.item(), dice_Heart.item(),
+                      dice_Trachea.item(), dice_Aorta.item()))
+
+        dices_mean_total += mean_dice.cpu().detach().numpy().item()
+        dice_Esophagus_total += dice_Esophagus.cpu().detach().numpy().item()
+        dice_Heart_total += dice_Heart.cpu().detach().numpy().item()
+        dice_Trachea_total += dice_Trachea.cpu().detach().numpy().item()
+        dice_Aorta_total += dice_Aorta.cpu().detach().numpy().item()
+
         gt = mask.numpy()[0].transpose([1, 2, 0])
         gt = onehot_to_mask(gt, palette)
         # print(pred.shape)
@@ -62,6 +74,17 @@ def auto_val(model):
             imgs.append(im * 255)
             preds.append(pred)
             gts.append(gt)
+
+    val_mean_dice = dices_mean_total/len(val_loader)
+    val_Esophagus_dice = dice_Esophagus_total/len(val_loader)
+    val_Heart_dice = dice_Heart_total/len(val_loader)
+    val_Trachea_dice = dice_Trachea_total/len(val_loader)
+    val_Aorta_dice = dice_Aorta_total/len(val_loader)
+
+    print('Val Mean Dice = {:.4}, Val Esophagus Dice = {:.4}, Val Heart Dice = {:.4}, Val Trachea Dice = {:.4}, '
+          'Val Aorta Dice = {:.4}'
+          .format(val_mean_dice, val_Esophagus_dice, val_Heart_dice, val_Trachea_dice, val_Aorta_dice))
+
     imgs = np.hstack([*imgs])
     preds = np.hstack([*preds])
     gts = np.hstack([*gts])
